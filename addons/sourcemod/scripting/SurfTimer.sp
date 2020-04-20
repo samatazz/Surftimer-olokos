@@ -1,9 +1,9 @@
-/*=======================================================
-=                 z4lab CS:GO SurfTimer                 =
- modified version of "SurfTimer" from fluffy for z4lab
- The original version of this timer was by jonitaikaponi 
-= https://forums.alliedmods.net/showthread.php?t=264498 =
-=======================================================*/
+/*=========================================================
+=                    CS:GO SurfTimer                      =
+=       modified version of "SurfTimer" from fluffy       =
+= The original version of this timer was by jonitaikaponi =
+=  https://forums.alliedmods.net/showthread.php?t=264498  =
+=========================================================*/
 
 /*====================================
 =              Includes              =
@@ -11,6 +11,7 @@
 
 #include <sourcemod>
 #include <sdkhooks>
+#include <sdktools>
 #include <adminmenu>
 #include <cstrike>
 #include <smlib>
@@ -22,13 +23,8 @@
 #undef REQUIRE_PLUGIN
 #include <dhooks>
 #include <mapchooser>
-#include <sdktools>
 #include <discord>
-#include <sourcecomms>
 #include <surftimer>
-#include <tf2>
-#include <tf2_stocks>
-#include <base64>
 
 /*===================================
 =            Definitions            =
@@ -39,7 +35,7 @@
 #pragma semicolon 1
 
 // Plugin Info
-#define VERSION "281"
+#define VERSION "283"
 
 // Database Definitions
 #define MYSQL 0
@@ -95,14 +91,14 @@
 #define ZONE_MODEL "models/props/de_train/barrel.mdl"
 
 // Zone Amount
-// Types: Start(1), End(2), Stage(3), Checkpoint(4), Speed(5), 
-// TeleToStart(6), Validator(7), Chekcer(8), Stop(0), AntiJump(9), 
+// Types: Start(1), End(2), Stage(3), Checkpoint(4), Speed(5),
+// TeleToStart(6), Validator(7), Chekcer(8), Stop(0), AntiJump(9),
 // AntiDuck(10), MaxSpeed(11)
 #define ZONEAMOUNT 12
 // Maximum amount of zonegroups in a map
 #define MAXZONEGROUPS 12
 // Maximum amount of zones in a map
-#define MAXZONES 128	
+#define MAXZONES 128
 
 // Ranking Definitions
 #define MAX_PR_PLAYERS 1066
@@ -129,6 +125,9 @@
 
 // New Save Locs
 #define MAX_LOCS 1024
+
+//CSGO HUD Hint Fix
+#define MAX_HINT_SIZE 225
 
 /*====================================
 =            Enumerations            =
@@ -214,7 +213,7 @@ public Plugin myinfo =
 	author = "Ace & olokos",
 	description = "a fork from fluffys cksurf fork",
 	version = VERSION,
-	url = "https://github.com/z4lab/z4lab-surftimer"
+	url = "https://github.com/olokos/Surftimer-olokos"
 };
 
 /*===================================
@@ -515,7 +514,6 @@ bool g_bCenterSpeedDisplay[MAXPLAYERS + 1];
 int g_iCenterSpeedEnt[MAXPLAYERS + 1];
 int g_iSettingToLoad[MAXPLAYERS + 1];
 int g_iPreviousSpeed[MAXPLAYERS + 1];
-bool db_Matcher[MAXPLAYERS+1];
 
 /*----------  Sounds  ----------*/
 bool g_bTop10Time[MAXPLAYERS + 1] = false;
@@ -716,7 +714,7 @@ bool g_bNoClip[MAXPLAYERS + 1];
 
 /*----------  User Options  ----------*/
 
-// bool to ensure the modules have loaded before resetting 
+// bool to ensure the modules have loaded before resetting
 bool g_bLoadedModules[MAXPLAYERS + 1];
 
 // Hides chat
@@ -1294,7 +1292,7 @@ Handle g_DefaultTitlesWhitelist = null;
 // Prespeed in zones
 int g_iWaitingForResponse[MAXPLAYERS + 1];
 
-// Trigger List so we can store the names of the triggers before we rename them 
+// Trigger List so we can store the names of the triggers before we rename them
 Handle g_TriggerMultipleList;
 
 // Chat Prefix
@@ -1398,8 +1396,6 @@ float gF_PlayerOrigin[MAXPLAYERS + 1][3];
 // Cookie handles
 Handle gH_TrailChoiceCookie;
 Handle gH_TrailHidingCookie;
-
-EngineVersion gEV_Type = Engine_Unknown;
 
 /*===================================
 =         Predefined Arrays         =
@@ -1704,7 +1700,7 @@ public void OnMapStart()
 	char mapPieces[6][128];
 	int lastPiece = ExplodeString(g_szMapName, "/", mapPieces, sizeof(mapPieces), sizeof(mapPieces[]));
 	Format(g_szMapName, sizeof(g_szMapName), "%s", mapPieces[lastPiece - 1]);
-	
+
 	// Debug Logging
 	if (!DirExists("addons/sourcemod/logs/surftimer"))
 		CreateDirectory("addons/sourcemod/logs/surftimer", 511);
@@ -1722,7 +1718,7 @@ public void OnMapStart()
 
 	/// Start Loading Server Settings
 	ConVar cvHibernateWhenEmpty = FindConVar("sv_hibernate_when_empty");
-	
+
 	if (!g_bRenaming && !g_bInTransactionChain && (IsServerProcessing() || !cvHibernateWhenEmpty.BoolValue))
 	{
 		LogToFileEx(g_szLogFile, "[surftimer] Starting to load server settings");
@@ -1830,7 +1826,7 @@ public void OnMapStart()
 	iEnt = -1;
 	if (g_hDestinations != null)
 		CloseHandle(g_hDestinations);
-	
+
 	g_hDestinations = CreateArray(128);
 	while ((iEnt = FindEntityByClassname(iEnt, "info_teleport_destination")) != -1)
 		PushArrayCell(g_hDestinations, iEnt);
@@ -1841,7 +1837,7 @@ public void OnMapStart()
 
 	// Playtime
 	CreateTimer(1.0, PlayTimeTimer, INVALID_HANDLE, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-	
+
 	// Server Announcements
 	g_iServerID = GetConVarInt(g_hServerID);
 	if (GetConVarBool(g_hRecordAnnounce))
@@ -1855,9 +1851,9 @@ public void OnMapStart()
 
 	if (!LoadColorsConfig())
 		SetFailState("Failed load \"configs/surftimer/trails-colors.cfg\". File missing or invalid.");
-	
+
 	gI_BeamSprite = PrecacheModel("materials/trails/beam_01.vmt", true);
-		
+
 	AddFileToDownloadsTable("materials/trails/beam_01.vmt");
 	AddFileToDownloadsTable("materials/trails/beam_01.vtf");
 }
@@ -1957,7 +1953,7 @@ public void OnConfigsExecuted()
 }
 
 public void OnClientConnected(int client)
-{    
+{
 	g_Stage[g_iClientInZone[client][2]][client] = 1;
 	g_WrcpStage[client] = 1;
 	g_Stage[0][client] = 1;
@@ -2089,7 +2085,7 @@ public void OnClientAuthorized(int client)
 public void OnClientDisconnect(int client)
 {
 	int index = aL_Clients.FindValue(client);
-	
+
 	if(index != -1) // If the index is valid and the player was found on the list
 	{
 		aL_Clients.Erase(index);
@@ -2564,7 +2560,7 @@ public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] 
 		Format(color, 28, "%s", newValue[0]);
 		StringRGBtoInt(color, g_iZoneColors[0]);
 	}
-	else if (convar == g_hZonerFlag) 
+	else if (convar == g_hZonerFlag)
 	{
 		AdminFlag flag;
 		bool validFlag;
@@ -2578,7 +2574,7 @@ public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] 
 		else
 			g_ZonerFlag = FlagToBit(flag);
 	}
-	else if (convar == g_hAdminMenuFlag) 
+	else if (convar == g_hAdminMenuFlag)
 	{
 		AdminFlag flag;
 		bool validFlag;
@@ -2772,19 +2768,10 @@ public void OnPluginStart()
 	gCV_BeamWidth.AddChangeHook(OnConVarChanged);
 	gCV_RespawnDisable.AddChangeHook(OnConVarChanged);
 
-	//Update Fix
-
-	g_TextMsg = GetUserMessageId("TextMsg");
-	g_HintText = GetUserMessageId("HintText");
-	HookUserMessage(g_TextMsg, TextMsgHintTextHook, true);
-	HookUserMessage(g_HintText, TextMsgHintTextHook, true);
-
-
 	gH_TrailChoiceCookie = RegClientCookie("trail_choice", "Trail Choice Cookie", CookieAccess_Protected);
 	gH_TrailHidingCookie = RegClientCookie("trail_hiding", "Trail Hiding Cookie", CookieAccess_Protected);
-	
+
 	aL_Clients = new ArrayList();
-	gEV_Type = GetEngineVersion();
 
 	for(int i = 1; i <= MaxClients; i++)
 	{
@@ -2968,7 +2955,7 @@ public int Native_GetPlayerData(Handle plugin, int numParams)
 			Format(szTime, 64, "%s", g_szPersonalRecord[client]);
 		else
 			Format(szTime, 64, "N/A");
-		
+
 		Format(szCountry, sizeof(szCountry), g_szCountryCode[client]);
 
 		rank = g_MapRank[client];

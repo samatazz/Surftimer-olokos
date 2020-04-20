@@ -75,7 +75,7 @@ public void loadAllClientSettings()
 			break;
 		}
 	}
-	
+
 	// RefreshZones();
 	g_bServerDataLoaded = true;
 }
@@ -141,7 +141,7 @@ public void teleportClient(int client, int zonegroup, int zone, bool stopTime)
 
 	if (g_iInitalStyle[client] != 5 && g_iInitalStyle[client] != 6)
 	 	SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 1.0);
-		
+
 	// Hack fix for b1 of surf_aircontrol_ksf
 	if (StrEqual(g_szMapName, "surf_aircontrol_ksf_123") && zonegroup == 1)
 		SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", 2.0);
@@ -163,16 +163,16 @@ public void teleportClient(int client, int zonegroup, int zone, bool stopTime)
 		realZone = 0;
 	else
 		realZone = zone;
-	
+
 	if (realZone > 1)
 		g_bInStageZone[client] = true;
 	else if (realZone == 1)
 		g_bInStartZone[client] = true;
-	
+
 	// Check clients tele side
 	int teleside = g_iTeleSide[client];
 
-	if (g_bStartposUsed[client][zonegroup])
+	if (g_bStartposUsed[client][zonegroup] && zone == 1)
 	{
 		if (GetClientTeam(client) == 1 || GetClientTeam(client) == 0) // Spectating
 		{
@@ -1151,10 +1151,10 @@ public void LimitSpeedNew(int client)
 {
 	if (!IsValidClient(client) || !IsPlayerAlive(client) || IsFakeClient(client) || g_mapZonesCount <= 0 || g_bPracticeMode[client] || g_mapZonesTypeCount[g_iClientInZone[client][2]][2] == 0 || g_iClientInZone[client][3] < 0 || g_iClientInZone[client][0] == 2 || g_iClientInZone[client][0] == 4 || g_iClientInZone[client][0] >= 6 || GetConVarInt(g_hLimitSpeedType) == 0 || g_iCurrentStyle[client] == 7)
 		return;
-	
+
 	if (GetConVarInt(g_hLimitSpeedType) == 0 || !g_bInStartZone[client] && !g_bInStageZone[client])
 		return;
-	
+
 	float speedCap = 0.0;
 	speedCap = g_mapZones[g_iClientInZone[client][3]][preSpeed];
 
@@ -1374,7 +1374,7 @@ public void SetClientDefaults(int client)
 	// Goose Start Pos
 	for (int i = 0; i < MAXZONEGROUPS; i++)
 		g_bStartposUsed[client][i] = false;
-	
+
 	// Save loc
 	g_iLastSaveLocIdClient[client] = 0;
 	g_fLastCheckpointMade[client] = 0.0;
@@ -1392,7 +1392,7 @@ public void SetClientDefaults(int client)
 	// Set default stage maybe
 	for (int i = 0; i < MAXZONEGROUPS; i++)
 		g_Stage[i][client] = 1;
-	
+
 	g_bInBhop[client] = false;
 }
 
@@ -1524,7 +1524,7 @@ public void PlayWRCPRecord(int iRecordtype)
 public void InitPrecache()
 {
 	char szBuffer[256];
-	
+
 	GetConVarString(g_hSoundPathWR, szBuffer, sizeof(szBuffer));
 	AddFileToDownloadsTable(szBuffer);
 	FakePrecacheSound(g_szRelativeSoundPathWR);
@@ -1566,8 +1566,8 @@ public void InitPrecache()
 	PrecacheModel(ZONE_MODEL);
 
 	// Preache default arm models
-	PrecacheModel("models/weapons/t_arms.mdl", true); 
-	PrecacheModel("models/weapons/ct_arms.mdl", true); 
+	PrecacheModel("models/weapons/t_arms.mdl", true);
+	PrecacheModel("models/weapons/ct_arms.mdl", true);
 }
 
 
@@ -1855,7 +1855,7 @@ stock void MapFinishedMsgs(int client, int rankThisRun = 0)
 
 		if (g_MapRank[client] == 99999 && IsValidClient(client))
 			CPrintToChat(client, "%t", "Misc19", g_szChatPrefix);
-		
+
 		Handle pack;
 		int style = 0;
 		CreateDataTimer(1.0, UpdatePlayerProfile, pack, TIMER_FLAG_NO_MAPCHANGE);
@@ -2255,7 +2255,7 @@ public void FormatTimeFloat(int client, float time, int type, char[] string, int
 		}
 		else
 			Format(string, length, "%s:%s:%s", szMinutes, szSeconds, szMilli);
-		
+
 		ReplaceString(string, length, "-", "");
 
 		if (time > 0.0)
@@ -2285,8 +2285,8 @@ public void SetSkillGroups()
 		MaxPoints += g_pr_MapCount[3] * 100.0;
 		MaxPoints += g_pr_MapCount[4] * 200.0;
 		MaxPoints += g_pr_MapCount[5] * 400.0;
-		MaxPoints += g_pr_MapCount[6] * 600.0; 
-		
+		MaxPoints += g_pr_MapCount[6] * 600.0;
+
 		// Bonus Points
 		MaxPoints += (float(g_totalBonusCount) * 200.0);
 	}
@@ -2338,7 +2338,7 @@ public void SetSkillGroups()
 					pointsTop = StringToInt(sBuffer2[1]);
 				}
 				else if (!StrEqual(sBuffer, "invalid"))
-					points = StringToInt(sBuffer);				
+					points = StringToInt(sBuffer);
 
 				// Get percentage
 				fPercentage = KvGetFloat(hKeyValues, "percentage", 0.0);
@@ -2446,7 +2446,7 @@ public void SetPlayerRank(int client)
 			char szName[MAX_NAME_LENGTH];
 			GetClientName(client, szName, sizeof(szName));
 			CRemoveColors(szName, sizeof(szName));
-			
+
 			Format(g_pr_chat_coloredrank[client], 128, RankValue[RankNameColored]);
 			Format(g_pr_chat_coloredrank_style[client], 128, RankValue[RankNameColored]);
 			ReplaceString(g_pr_chat_coloredrank[client], 128, "{style}", "");
@@ -2979,7 +2979,7 @@ public void SpecListMenuDead(int client) // What Spectators see
 						{
 							if (g_bManualStageReplayPlayback)
 							{
-								int stage = g_iSelectedReplayStage; 
+								int stage = g_iSelectedReplayStage;
 								Format(g_szPlayerPanelText[client], 512, "Stage: %i Replay (%i)\n%s (%s)\n \nSpecs (%i):\n%s\n", stage, g_iManualStageReplayCount + 1, g_szWrcpReplayName[stage],  g_szWrcpReplayTime[stage], count, sSpecs);
 							}
 							else
@@ -3200,7 +3200,7 @@ public void CenterHudDead(int client)
 				Format(sResult, sizeof(sResult), "%s <font color='#b48ead'>R</font>", sResult);
 			else
 				Format(sResult, sizeof(sResult), "%s _", sResult);
-			
+
 			if (IsFakeClient(ObservedUser))
 			{
 				if (ObservedUser == g_RecordBot)
@@ -3209,8 +3209,8 @@ public void CenterHudDead(int client)
 					Format(obsAika, sizeof(obsAika), "<font color='#ebcb8b'>%s</font>", g_szBonusTime);
 				else if (ObservedUser == g_WrcpBot)
 					Format(obsAika, sizeof(obsAika), "<font color='#ebcb8b'>%s</font>", g_szWrcpReplayTime[g_iCurrentlyPlayingStage]);
-				
-				PrintHintText(client, "<pre><font face=''>%s\nSpeed: <font color='#5e81ac'>%i</font> u/s\n%s</pre>", obsAika, RoundToNearest(g_fLastSpeed[ObservedUser]), sResult);
+
+				PrintCSGOHUDText(client, "<pre><font face=''>%s\nSpeed: <font color='#5e81ac'>%i</font> u/s\n%s</pre>", obsAika, RoundToNearest(g_fLastSpeed[ObservedUser]), sResult);
 				return;
 			}
 			else if (g_bTimerRunning[ObservedUser])
@@ -3236,7 +3236,7 @@ public void CenterHudDead(int client)
 			else if (g_iCurrentStyle[ObservedUser] != 0)
 				Format(timerText, 32, "%s ", g_szStyleHud[ObservedUser]);
 
-			PrintHintText(client, "<pre><font face=''>%s<font color='#a3be8c'>%s</font>\nSpeed: <font color='#5e81ac'>%i</font> u/s\n%s</pre>", timerText, obsAika, RoundToNearest(g_fLastSpeed[ObservedUser]), sResult);
+			PrintCSGOHUDText(client, "<pre><font face=''>%s<font color='#a3be8c'>%s</font>\nSpeed: <font color='#5e81ac'>%i</font> u/s\n%s</pre>", timerText, obsAika, RoundToNearest(g_fLastSpeed[ObservedUser]), sResult);
 		}
 	}
 	else
@@ -3502,8 +3502,8 @@ public void CenterHudAlive(int client)
 
 		if (IsValidEntity(client) && 1 <= client <= MaxClients && !g_bOverlay[client])
 		{
-			// PrintHintText(client, "<font face=''>%s%s\n%s%s\n%s%s</font>", module[0], module2, module[2], module4, module[4], module6);
-			PrintHintText(client, "<pre><font face='' class='fontSize-sm'>%15s\t %15s\n%15s\t %15s\n%15s\t %15s</font></pre>", module[0], module[1], module[2], module[3], module[4], module[5]);
+			// PrintCSGOHUDText(client, "<font face=''>%s%s\n%s%s\n%s%s</font>", module[0], module2, module[2], module4, module[4], module6);
+			PrintCSGOHUDText(client, "<pre><font face='' class='fontSize-sm'>%15s\t %15s\n%15s\t %15s\n%15s\t %15s</font></pre>", module[0], module[1], module[2], module[3], module[4], module[5]);
 		}
 	}
 }
@@ -4138,7 +4138,7 @@ public void GetSpeedColour(int client, int speed, int type)
 				Format(g_szSpeedColour[client], sizeof(g_szSpeedColour), "#88c0d0");
 			else
 				Format(g_szSpeedColour[client], sizeof(g_szSpeedColour), "#bf616a");
-			
+
 			g_iPreviousSpeed[client] = speed;
 		}
 		else
@@ -4307,7 +4307,7 @@ public void sendDiscordAnnouncement(char szName[128], char szMapName[128], char 
 	GetConVarString(g_dcMapRecordName, webhookName, 1024);
 	if (StrEqual(webhook, ""))
 		return;
-		
+
 	// Send Discord Announcement
 	DiscordWebHook hook = new DiscordWebHook(webhook);
 	hook.SlackMode = true;
@@ -4335,7 +4335,7 @@ public void sendDiscordAnnouncementBonus(char szName[128], char szMapName[128], 
 			return;
 		else
 			webhook = webhookN;
-			
+
 
  	// Send Discord Announcement
 	DiscordWebHook hook = new DiscordWebHook(webhook);
@@ -4543,7 +4543,7 @@ public void LoadDefaultTitle(int client)
 						g_iHasEnforcedTitle[client] = false;
 						continue;
 					}
-					
+
 				}
 
 				KvGetString(kv, "flag", szBuffer, sizeof(szBuffer), "none");
@@ -4627,80 +4627,23 @@ public bool IsPlayerTimerAdmin(int client)
 	return false;
 }
 
-UserMsg g_TextMsg, g_HintText;
-
-Action TextMsgHintTextHook(UserMsg msg_id, Protobuf msg, const int[] players, int playersNum, bool reliable, bool init)
+void PrintCSGOHUDText(int client, const char[] format, any ...)
 {
-	static char sBuf[8192];
-	
-	if(msg_id == g_HintText)
-	{
-		msg.ReadString("text", sBuf, sizeof sBuf);
-	}
-	else if(msg.ReadInt("msg_dst") == 4)
-	{
-		msg.ReadString("params", sBuf, sizeof sBuf, 0);
-	}
-	else
-	{
-		return Plugin_Continue;
-	}
-		
-	if(StrContains(sBuf, "<font") != -1 || StrContains(sBuf, "<span") != -1) // only hook msg with colored tags
-	{
-		DataPack hPack = new DataPack();
-		
-		hPack.WriteCell(playersNum);
-		
-		for(int i = 0; i < playersNum; i++)
-		{
-			hPack.WriteCell(players[i]);
-		}
-		
-		hPack.WriteString(sBuf);
-		
-		hPack.Reset();
-		
-		RequestFrame(TextMsgFix, hPack);
-		
-		return Plugin_Handled;
-	}
-	
-	return Plugin_Continue;
-}
+	char buff[MAX_HINT_SIZE];
+	VFormat(buff, sizeof(buff), format, 3);
+	Format(buff, sizeof(buff), "</font>%s ", buff);
 
-void TextMsgFix(DataPack hPack)
-{
-	int iCount = hPack.ReadCell();
-	
-	static int iPlayers[MAXPLAYERS+1];
-	
-	for(int i = 0; i < iCount; i++)
-	{
-		iPlayers[i] = hPack.ReadCell();
-	}
-	
-	static char sBuf[8192];
-	
-	hPack.ReadString(sBuf, sizeof sBuf);
-	
-	delete hPack;
-	
-	Protobuf hMessage = view_as<Protobuf>(StartMessageEx(g_TextMsg, iPlayers, iCount, USERMSG_RELIABLE|USERMSG_BLOCKHOOKS));
-	
-	if(hMessage)
-	{
-		hMessage.SetInt("msg_dst", 4);
-		hMessage.AddString("params", "#SFUI_ContractKillStart");
-		
-		Format(sBuf, sizeof sBuf, "</font>%s\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", sBuf);
-		hMessage.AddString("params", sBuf);
-		
-		hMessage.AddString("params", NULL_STRING);
-		hMessage.AddString("params", NULL_STRING);
-		hMessage.AddString("params", NULL_STRING);
-		hMessage.AddString("params", NULL_STRING);
-		
-		EndMessage();
-	}
+	for(int i = strlen(buff); i < sizeof(buff); i++)
+		buff[i] = '\n';
+
+	Protobuf pb = view_as<Protobuf>(StartMessageOne("TextMsg", client, USERMSG_RELIABLE | USERMSG_BLOCKHOOKS));
+	pb.SetInt("msg_dst", 4);
+	pb.AddString("params", "#SFUI_ContractKillStart");
+	pb.AddString("params", buff);
+	pb.AddString("params", NULL_STRING);
+	pb.AddString("params", NULL_STRING);
+	pb.AddString("params", NULL_STRING);
+	pb.AddString("params", NULL_STRING);
+
+	EndMessage();
 }
