@@ -86,16 +86,6 @@ public Action Event_OnPlayerSpawn(Handle event, const char[] name, bool dontBroa
 		g_bInJump[client] = false;
 		g_bInDuck[client] = false;
 
-
-		if(!gB_HidingTrails[client] && aL_Clients.FindValue(client) == -1) // If the client isn't hiding trails, but somehow isn't on the list
-		{
-			aL_Clients.Push(client);
-		}
-		
-		if(gB_RespawnDisable) // Reset trail on respawn
-		{
-			gI_SelectedTrail[client] = TRAIL_NONE;
-		}	
 		// Set stage to 1 on spawn cause why not
 		if (!g_bRespawnPosition[client] && !g_specToStage[client])
 		{
@@ -832,15 +822,6 @@ public Action OnLogAction(Handle source, Identity ident, int client, int target,
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 
-	if(gB_CheapTrails)
-	{
-		ForceCheapTrails(client);
-	}
-	else
-	{
-		ForceExpensiveTrails(client);
-	}
-
 	if (buttons & IN_DUCK && g_bInDuck[client] == true)
 	{
 		CPrintToChat(client, "%t", "Hooks11", g_szChatPrefix);
@@ -1386,7 +1367,7 @@ public Action Event_PlayerJump(Handle event, char[] name, bool dontBroadcast)
 						float time = GetGameTime();
 						float time2 = time - g_fJumpedInZoneTime[client];
 						g_bJumpedInZone[client] = false;
-						if (time2 <= 0.9)
+						if (time2 <= 0.9 && !(g_iCurrentStyle[client] == 7))
 						{
 							CPrintToChat(client, "%t", "Hooks15", g_szChatPrefix);
 							Handle pack;
